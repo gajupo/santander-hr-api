@@ -29,6 +29,7 @@ namespace santander_hr_api.Services
             var bestStories = await _hackerNewsClient.GetBestStoriesAsync();
             _logger.LogInformation("Retrieved {Count} best stories", bestStories.Length);
 
+            count = Math.Min(count, (short)bestStories.Length);
             var stories = new ConcurrentBag<Story>();
 
             await Parallel.ForEachAsync(
