@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using santander_hr_api.Config;
 using santander_hr_api.Extensions;
 using Serilog;
 
@@ -73,17 +74,19 @@ namespace santander_hr_api
 
         private static void ConfigureHttpClient(WebApplicationBuilder builder)
         {
-            builder.Services.AddHttpClient(
-                "hackerNews",
-                client =>
-                {
-                    client.BaseAddress = new Uri(
-                        builder.Configuration["HackerRankBaseUrl"]
-                            ?? "https://hacker-news.firebaseio.com/v0/"
-                    );
-                    client.DefaultRequestHeaders.Add("Accept", "application/json");
-                }
-            );
+            builder
+                .Services.AddHttpClient(
+                    "hackerNews",
+                    client =>
+                    {
+                        client.BaseAddress = new Uri(
+                            builder.Configuration["HackerRankBaseUrl"]
+                                ?? "https://hacker-news.firebaseio.com/v0/"
+                        );
+                        client.DefaultRequestHeaders.Add("Accept", "application/json");
+                    }
+                )
+                .AddPolicyHandler(PollyPolicyHelper.GetSimpleRetryPolicy());
         }
 
         private static async Task ConfigureApplication(
