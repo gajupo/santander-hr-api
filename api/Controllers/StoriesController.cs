@@ -25,7 +25,15 @@ namespace santander_hr_api.Controllers
         {
             if (count <= 0)
             {
-                return BadRequest("Count must be greater than 0");
+                var problemDetails = new ProblemDetails
+                {
+                    Title = "Count must be greater than 0",
+                    Status = StatusCodes.Status400BadRequest,
+                    Detail = "Count must be greater than 0",
+                    Type = "BadRequest"
+                };
+
+                return BadRequest(problemDetails);
             }
 
             try
