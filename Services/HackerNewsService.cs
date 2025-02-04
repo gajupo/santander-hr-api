@@ -1,11 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using AutoMapper;
 using santander_hr_api.Interfaces;
 using santander_hr_api.Models;
-using Serilog;
 
 namespace santander_hr_api.Services
 {
@@ -32,16 +29,21 @@ namespace santander_hr_api.Services
             var bestStories = await _hackerNewsClient.GetBestStoriesAsync();
             _logger.LogInformation("Retrieved {Count} best stories", bestStories.Length);
 
-            var storyTasks = bestStories
-                .Take(count)
-                .Select(id => _hackerNewsClient.GetStoryByIdAsync(id));
+            var stories = new ConcurrentBag<Story>();
 
-            // get details for each story in parallel
-            var stories = await Task.WhenAll(storyTasks);
+            await Parallel.ForEachAsync(
+                bestStories.Take(count),
+                async (id, cancellationToken) =>
+                {
+                    var story = await _hackerNewsClient.GetStoryByIdAsync(id);
+                    if (story != null)
+                    {
+                        stories.Add(story);
+                    }
+                }
+            );
 
-            var noNullStories = stories
-                .Where(story => story != null)
-                .OrderByDescending(story => story!.Score);
+            var noNullStories = stories.OrderByDescending(story => story.Score);
 
             return _mapper.Map<IEnumerable<StoryDto>>(noNullStories);
         }
