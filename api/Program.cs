@@ -21,6 +21,32 @@ namespace santander_hr_api
             return builder;
         }
 
+        public static async Task RunApplication(
+            WebApplicationBuilder builder,
+            CancellationToken cancellationToken = default,
+            Serilog.ILogger? logger = null
+        )
+        {
+            // Use provided logger or create default
+            Log.Logger = logger ?? new LoggerConfiguration().WriteTo.Console().CreateLogger();
+            Log.Information("Starting up");
+            try
+            {
+                var app = builder.Build();
+                await ConfigureApplication(app, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Application start-up failed");
+                throw;
+            }
+            finally
+            {
+                Log.Information("Shutting down");
+                Log.CloseAndFlush();
+            }
+        }
+
         private static void ConfigureServices(WebApplicationBuilder builder)
         {
             // configure Serilog
@@ -60,30 +86,10 @@ namespace santander_hr_api
             );
         }
 
-        private static async Task RunApplication(WebApplicationBuilder builder)
-        {
-            // create a logger configuration
-            Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
-            Log.Information("Starting up");
-
-            try
-            {
-                var app = builder.Build();
-                await ConfigureApplication(app);
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "Application start-up failed");
-                throw;
-            }
-            finally
-            {
-                Log.Information("Shutting down");
-                Log.CloseAndFlush();
-            }
-        }
-
-        private static async Task ConfigureApplication(WebApplication app)
+        private static async Task ConfigureApplication(
+            WebApplication app,
+            CancellationToken cancellationToken
+        )
         {
             // configure the global exception handler
             app.UseGlobalExceptionHandler();
@@ -96,7 +102,7 @@ namespace santander_hr_api
             }
 
             app.MapControllers();
-            await app.RunAsync();
+            await app.RunAsync(cancellationToken);
         }
     }
 }
