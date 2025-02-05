@@ -65,8 +65,11 @@ namespace santander_hr_api.tests
 
             // Assert
             Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
-            var badRequestResult = result.Result as BadRequestObjectResult;
-            Assert.That(badRequestResult.Value, Is.EqualTo("Count must be greater than 0"));
+            // the result is an action result, so we need to cast it to ObjectResult to access the StatusCode property
+            var objectResult = result.Result as ObjectResult;
+            var returnedValue = objectResult?.Value as ProblemDetails;
+            Assert.That(returnedValue?.Title, Is.EqualTo("Count must be greater than 0"));
+            Assert.That(objectResult?.StatusCode, Is.EqualTo(400));
         }
 
         [Test]
